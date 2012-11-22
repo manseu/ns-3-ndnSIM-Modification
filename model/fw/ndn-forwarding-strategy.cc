@@ -133,7 +133,7 @@ ForwardingStrategy::OnInterest (const Ptr<Face> &incomingFace,
   Ptr<pit::Entry> pitEntry = m_pit->Lookup (*header);
   if (pitEntry == 0)
     {
-    //create a new pit entry that a header with locator, added by Tang
+    //create a new pit entry if there is no pit entry for the name, added by Tang
       pitEntry = m_pit->Create (header);
       if (pitEntry != 0)
         {

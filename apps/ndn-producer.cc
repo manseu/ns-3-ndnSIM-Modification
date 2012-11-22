@@ -116,7 +116,12 @@ Producer::OnInterest (const Ptr<const InterestHeader> &interest, Ptr<Packet> ori
   NS_LOG_FUNCTION (this << interest);
 
   if (!m_active) return;
-    
+
+  //added by Tang
+  //we can do something here, check the next node, or forward to the new locator.
+  //if(interest->GetLocator()==m_prefix) return;
+  if(!(interest->GetName().cut(1) == m_prefix)) return;
+  
   static ContentObjectTail tail;
   Ptr<ContentObjectHeader> header = Create<ContentObjectHeader> ();
   header->SetName (Create<NameComponents> (interest->GetName ()));
