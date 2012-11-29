@@ -18,6 +18,12 @@
  * Author:  Alexander Afanasyev <alexander.afanasyev@ucla.edu>
  *          Ilya Moiseenko <iliamo@cs.ucla.edu>
  */
+/**
+  * Modified by Tang, <tangjianqiang@bjtu.edu.cn>
+  * National Engineering Lab for Next Generation Internet Interconnection Devices,
+  * School of Electronics and Information Engineering,
+  * Beijing Jiaotong Univeristy, Beijing 100044, China.
+**/
 
 #include "ndn-forwarding-strategy.h"
 
@@ -127,50 +133,54 @@ ForwardingStrategy::OnInterest (const Ptr<Face> &incomingFace,
                                     Ptr<InterestHeader> &header,
                                     const Ptr<const Packet> &packet)
 {
-  m_inInterests (header, incomingFace);
+    m_inInterests (header, incomingFace);
 
-  //lookup the PIT Table, added by Tang
-  Ptr<pit::Entry> pitEntry = m_pit->Lookup (*header);
-  if (pitEntry == 0)
+    Ptr<pit::Entry> pitEntry = m_pit->Lookup (*header);
+    if (pitEntry == 0)
     {
-    //create a new pit entry if there is no pit entry for the name, added by Tang
       pitEntry = m_pit->Create (header);
       if (pitEntry != 0)
-        {
-          DidCreatePitEntry (incomingFace, header, packet, pitEntry);
-        }
+      {
+        DidCreatePitEntry (incomingFace, header, packet, pitEntry);
+      }
       else
-        {
-          FailedToCreatePitEntry (incomingFace, header, packet);
-          return;
-        }
-    }
-
-  bool isDuplicated = true;
-  //check whether have received the same interets.
-  if (!pitEntry->IsNonceSeen (header->GetNonce ()))
+      {
+         FailedToCreatePitEntry (incomingFace, header, packet);
+         return;
+       }
+     }
+	
+  if( header->GetAgent()>0)
+  {
+      Ptr<fib::Entry> fibEntry = m_fib->LongestPrefixMatchOfLocator (*header);
+      if (!(fibEntry == 0))
+      	{
+         pitEntry->SetFibEntry(fibEntry);
+      	}
+  }
+  
+    bool isDuplicated = true;
+    //check whether have received the same interets.
+    if (!pitEntry->IsNonceSeen (header->GetNonce ()))
     {
       pitEntry->AddSeenNonce (header->GetNonce ());
       isDuplicated = false;
     }
 
-  //return for received the same interest
-  //interest is identified by nonce, added by Tang
-  if (isDuplicated) 
+    //return for received the same interest
+    if (isDuplicated) 
     {
       DidReceiveDuplicateInterest (incomingFace, header, packet, pitEntry);
       return;
     }
 
-  Ptr<Packet> contentObject;
-  Ptr<const ContentObjectHeader> contentObjectHeader; // used for tracing
-  Ptr<const Packet> payload; // used for tracing
+    Ptr<Packet> contentObject;
+    Ptr<const ContentObjectHeader> contentObjectHeader; // used for tracing
+    Ptr<const Packet> payload; // used for tracing
 
-  //look up the content is the content store, added by Tang
-  boost::tie (contentObject, contentObjectHeader, payload) = m_contentStore->Lookup (header);
+    boost::tie (contentObject, contentObjectHeader, payload) = m_contentStore->Lookup (header);
   
-  //find the content in content store and return data, added by Tang
-  if (contentObject != 0)
+    if (contentObject != 0)
     {
       NS_ASSERT (contentObjectHeader != 0);      
 
@@ -184,8 +194,7 @@ ForwardingStrategy::OnInterest (const Ptr<Face> &incomingFace,
       return;
     }
 
-  //add face to the existing PIT entry, and return, added by Tang
-  if (ShouldSuppressIncomingInterest (incomingFace, pitEntry))
+    if (ShouldSuppressIncomingInterest (incomingFace, pitEntry))
     {
       pitEntry->AddIncoming (incomingFace/*, header->GetInterestLifetime ()*/);
       // update PIT entry lifetime
@@ -197,8 +206,8 @@ ForwardingStrategy::OnInterest (const Ptr<Face> &incomingFace,
       return;
     }
 
-  //forward interest, added by Tang
-  PropagateInterest (incomingFace, header, packet, pitEntry);
+    PropagateInterest (incomingFace, header, packet, pitEntry);
+	    
 }
 
 void
@@ -304,9 +313,13 @@ ForwardingStrategy::SatisfyPendingInterest (const Ptr<Face> &incomingFace,
                                                 const Ptr<const Packet> &packet,
                                                 Ptr<pit::Entry> pitEntry)
 {
-  if (incomingFace != 0)
-    pitEntry->RemoveIncoming (incomingFace);
-
+  if(!(header->GetPosition()>=0))
+  {
+    if (incomingFace != 0)
+    {
+      pitEntry->RemoveIncoming (incomingFace);
+    }
+  }
   //satisfy all pending incoming Interests
   BOOST_FOREACH (const pit::IncomingFace &incoming, pitEntry->GetIncoming ())
     {
@@ -392,7 +405,8 @@ ForwardingStrategy::ShouldSuppressIncomingInterest (const Ptr<Face> &incomingFac
 
       // ?? not sure if we need to do that ?? ...
       
-      // pitEntry->GetFibEntry ()->UpdateStatus (incomingFace, fib::FaceMetric::NDN_FIB_YELLOW);
+      //pitEntry->GetFibEntry ()->UpdateStatus (incomingFace, fib::FaceMetric::NDN_FIB_YELLOW);
+      //pitEntry->GetFibEntry ()->AddOrUpdateRoutingMetric(incomingFace,0);
     }
   else
     if (!isNew && !isRetransmitted)
@@ -411,11 +425,11 @@ ForwardingStrategy::PropagateInterest (const Ptr<Face> &incomingFace,
 {
   bool isRetransmitted = m_detectRetransmissions && // a small guard
                          DetectRetransmittedInterest (incomingFace, pitEntry);  
-
-  //deal with the incoming with no existing PIT entry
-  //add face to the list of incoming faces, added by Tang
-  pitEntry->AddIncoming (incomingFace/*, header->GetInterestLifetime ()*/);
-  
+ 
+  if(!(header->GetAgent()>0))
+  {
+      pitEntry->AddIncoming (incomingFace/*, header->GetInterestLifetime ()*/);
+  }
   /// @todo Make lifetime per incoming interface
   pitEntry->UpdateLifetime (header->GetInterestLifetime ());
   

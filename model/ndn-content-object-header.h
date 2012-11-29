@@ -251,29 +251,24 @@ public:
   Ptr<const NameComponents>
   GetNamePtr () const;
   
-//added by Tang
-  /**
-   * \brief Set content object locator
-   *
-   * Sets locator of the content object. For example, SetLocator( NameComponents("prefix")("postfix") );
-   *
-   **/
-/*  void
+  void
   SetLocator (const Ptr<NameComponents> &locator);
-*/
-  /**
-   * @brief Get locator of the content object
-   */
-  /*const NameComponents&
+
+  const NameComponents&
   GetLocator () const;
-*/
-  /**
-   * @brief Get smart pointer to the interest locator (to avoid extra memory usage)
-   */
-   /*
+
   Ptr<const NameComponents>
   GetLocatorPtr () const;
-*/
+
+  bool
+  IsEnabledLocator() const;
+  
+  void
+  SetPosition (int8_t position);
+
+  int8_t
+  GetPosition () const;
+
   /**
    * @brief Get editable reference to content object's Signature
    */
@@ -310,7 +305,8 @@ public:
 private:
   Signature  m_signature;
   Ptr<NameComponents> m_name;
-//  Ptr<NameComponents> m_locator;
+  Ptr<NameComponents> m_locator;  ///< @brief Locator of producer
+  int8_t m_position;  ///< @brief default is -1, move times of producer. 1 denotes moved once, 2 denotes twice
   SignedInfo m_signedInfo;
 };
 

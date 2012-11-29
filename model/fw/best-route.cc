@@ -71,7 +71,6 @@ BestRoute::DoPropagateInterest (const Ptr<Face> &incomingFace,
     return true;
 
   int propagatedCount = 0;
-  //BOOST_FOREACH(int i, a) is a traversal function, traverse the i in a. Added by Tang.
   //This cycle is to traversal the face in the FIB to send Interest
   BOOST_FOREACH (const fib::FaceMetric &metricFace, pitEntry->GetFibEntry ()->m_faces.get<fib::i_metric> ())
     {

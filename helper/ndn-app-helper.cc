@@ -44,7 +44,6 @@ AppHelper::SetPrefix (const std::string &prefix)
   m_factory.Set ("Prefix", StringValue(prefix));
 }
 
-//added by Tang
 void
 AppHelper::SetLocator (const std::string &prefix)
 {

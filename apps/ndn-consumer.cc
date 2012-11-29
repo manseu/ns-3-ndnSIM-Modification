@@ -16,7 +16,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Ilya Moiseenko <iliamo@cs.ucla.edu>
- */
+ *//**
+  * Modified by Tang, <tangjianqiang@bjtu.edu.cn>
+  * National Engineering Lab for Next Generation Internet Interconnection Devices,
+  * School of Electronics and Information Engineering,
+  * Beijing Jiaotong Univeristy, Beijing 100044, China.
+**/
+
 
 #include "ndn-consumer.h"
 #include "ns3/ptr.h"
@@ -65,7 +71,6 @@ Consumer::GetTypeId (void)
                    StringValue ("/"),
                    MakeNameComponentsAccessor (&Consumer::m_interestName),
                    MakeNameComponentsChecker ())
-    //added by Tang
     .AddAttribute ("Locator","Locator of the Content",
                    NameComponentsValue (),
                    MakeNameComponentsAccessor (&Consumer::m_locatorName),
@@ -91,7 +96,6 @@ Consumer::GetTypeId (void)
                    NameComponentsValue (),
                    MakeNameComponentsAccessor (&Consumer::m_exclude),
                    MakeNameComponentsChecker ())
-
     .AddAttribute ("RetxTimer",
                    "Timeout defining how frequent retransmission timeouts should be checked",
                    StringValue ("50ms"),
@@ -227,18 +231,13 @@ Consumer::SendPacket ()
   
   // std::cout << Simulator::Now ().ToDouble (Time::S) << "s -> " << seq << "\n";
   
-  //
   Ptr<NameComponents> nameWithSequence = Create<NameComponents> (m_interestName);
   (*nameWithSequence) (seq);
-  //
-  //added by Tang
-  //Ptr<NameComponents> locatorName = Create<NameComponents> (m_locatorName);
 
   InterestHeader interestHeader;
   interestHeader.SetNonce               (m_rand.GetValue ());
   interestHeader.SetName                (nameWithSequence);
   
-  //added by Tang
   if(m_locatorName.size()>0)
   {
       interestHeader.SetLocator    (Create<NameComponents> (m_locatorName));
@@ -247,9 +246,11 @@ Consumer::SendPacket ()
   interestHeader.SetInterestLifetime    (m_interestLifeTime);
   interestHeader.SetChildSelector       (m_childSelector);
   if (m_exclude.size ()>0)
-    {
+  {
       interestHeader.SetExclude (Create<NameComponents> (m_exclude));
-    }
+  }
+  
+  interestHeader.SetAgent(m_isfromAgent);
   interestHeader.SetMaxSuffixComponents (m_maxSuffixComponents);
   interestHeader.SetMinSuffixComponents (m_minSuffixComponents);
         
@@ -286,6 +287,11 @@ Consumer::OnContentObject (const Ptr<const ContentObjectHeader> &contentObject,
   App::OnContentObject (contentObject, payload); // tracing inside
   
   NS_LOG_FUNCTION (this << contentObject << payload);
+
+  if(contentObject->IsEnabledLocator() && contentObject->GetLocator().size()>0)
+  {
+      m_locatorName=contentObject->GetLocator();
+  }
 
   // NS_LOG_INFO ("Received content object: " << boost::cref(*contentObject));
   

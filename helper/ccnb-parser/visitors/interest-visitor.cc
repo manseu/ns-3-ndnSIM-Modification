@@ -83,7 +83,6 @@ InterestVisitor::visit (Dtag &n, boost::any param/*should be InterestHeader* */)
         interest.SetName (name);
         break;
       }
-	//added by Tang
     case CCN_DTAG_Locator:
       {
         NS_LOG_DEBUG ("Locator");
@@ -131,7 +130,17 @@ InterestVisitor::visit (Dtag &n, boost::any param/*should be InterestHeader* */)
         interest.SetExclude (exclude);
         break;
       }
-    case CCN_DTAG_ChildSelector:
+    case CCN_DTAG_Agent:
+      NS_LOG_DEBUG ("Agent");
+      if (n.m_nestedTags.size()!=1) // should be exactly one UDATA inside this tag
+        throw CcnbDecodingException ();
+      interest.SetAgent (
+               boost::any_cast<uint32_t> (
+                                          (*n.m_nestedTags.begin())->accept(
+                                                                           nonNegativeIntegerVisitor
+                                                                           )));
+      break;
+     case CCN_DTAG_ChildSelector:
       NS_LOG_DEBUG ("ChildSelector");
       if (n.m_nestedTags.size()!=1) // should be exactly one UDATA inside this tag
         throw CcnbDecodingException ();

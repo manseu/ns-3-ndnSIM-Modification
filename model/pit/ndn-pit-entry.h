@@ -17,6 +17,12 @@
  *
  * Author: Alexander Afanasyev <alexander.afanasyev@ucla.edu>
  */
+ /**
+  * Modified by Tang, <tangjianqiang@bjtu.edu.cn>
+  * National Engineering Lab for Next Generation Internet Interconnection Devices,
+  * School of Electronics and Information Engineering,
+  * Beijing Jiaotong Univeristy, Beijing 100044, China.
+**/
 
 #ifndef _NDN_PIT_ENTRY_H_
 #define _NDN_PIT_ENTRY_H_
@@ -233,6 +239,9 @@ public:
 
   Ptr<fib::Entry>
   GetFibEntry () { return m_fibEntry; };
+
+  virtual void
+  SetFibEntry (const Ptr<fib::Entry> &fibEntry) ;
 
   const in_container &
   GetIncoming () const { return m_incoming; }

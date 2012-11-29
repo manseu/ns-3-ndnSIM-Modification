@@ -52,6 +52,9 @@ InterestSerializationTest::DoRun ()
   source.SetExclude (Create<NameComponents> (boost::lexical_cast<NameComponents> ("/exclude/exclude2")));
   NS_TEST_ASSERT_MSG_EQ (source.GetExclude (), boost::lexical_cast<NameComponents> ("/exclude/exclude2"), "set/get exclude failed");
 
+  source.SetAgent(5);
+  NS_TEST_ASSERT_MSG_EQ (source.GetAgent (), 5, "set/get agent failed");
+
   source.SetChildSelector       (false);
   NS_TEST_ASSERT_MSG_EQ (source.IsEnabledChildSelector (), false, "set/get child selector failed");
   source.SetChildSelector       (true);
@@ -87,6 +90,7 @@ InterestSerializationTest::DoRun ()
   NS_TEST_ASSERT_MSG_EQ (source.GetMinSuffixComponents ()   , target.GetMinSuffixComponents ()   , "source/target minSuffixComponents failed");
   NS_TEST_ASSERT_MSG_EQ (source.GetMaxSuffixComponents ()   , target.GetMaxSuffixComponents ()   , "source/target maxSuffixComponents failed");
   NS_TEST_ASSERT_MSG_EQ (source.GetExclude ()               , target.GetExclude ()               , "source/target exclude failed");
+  NS_TEST_ASSERT_MSG_EQ (source.GetAgent()               , target.GetAgent ()               , "source/target agent failed");
   NS_TEST_ASSERT_MSG_EQ (source.IsEnabledChildSelector ()   , target.IsEnabledChildSelector ()   , "source/target child selector failed");
   NS_TEST_ASSERT_MSG_EQ (source.IsEnabledAnswerOriginKind (), target.IsEnabledAnswerOriginKind (), "source/target answer origin kind failed");
   NS_TEST_ASSERT_MSG_EQ (source.GetScope ()                 , target.GetScope ()                 , "source/target scope failed");

@@ -40,7 +40,6 @@ EncodingHelper::Serialize (Buffer::Iterator start, const InterestHeader &interes
   written += AppendNameComponents (start, interest.GetName());                // <Component>...</Component>...
   written += AppendCloser (start);                               // </Name>
 
-  //added by Tang
   if (interest.IsEnabledLocator() && interest.GetLocator().size()>0)
     {
       written += AppendBlockHeader( start, CcnbParser::CCN_DTAG_Locator, CcnbParser::CCN_DTAG);
@@ -65,6 +64,12 @@ EncodingHelper::Serialize (Buffer::Iterator start, const InterestHeader &interes
       written += AppendBlockHeader (start, CcnbParser::CCN_DTAG_Exclude, CcnbParser::CCN_DTAG); // <Exclude>
       written += AppendNameComponents (start, interest.GetExclude());                // <Component>...</Component>...
       written += AppendCloser (start);                                  // </Exclude>
+    }
+    if (interest.GetAgent()>=0)
+    {
+      written += AppendBlockHeader (start, CcnbParser::CCN_DTAG_Agent, CcnbParser::CCN_DTAG);
+      written +=  AppendNumber (start, interest.GetAgent());
+      written += AppendCloser (start);
     }
   if (interest.IsEnabledChildSelector())
     {
@@ -117,7 +122,6 @@ EncodingHelper::GetSerializedSize (const InterestHeader &interest)
   written += EstimateNameComponents (interest.GetName()); // <Component>...</Component>...
   written += 1; // </Name>
 
-//added by Tang
 if (interest.IsEnabledLocator() && interest.GetLocator().size()>0)
   {
     written += EstimateBlockHeader (CcnbParser::CCN_DTAG_Locator); // <LocatorName>
@@ -142,6 +146,12 @@ if (interest.IsEnabledLocator() && interest.GetLocator().size()>0)
       written += EstimateBlockHeader (CcnbParser::CCN_DTAG_Exclude);
       written += EstimateNameComponents (interest.GetExclude());                // <Component>...</Component>...
       written += 1;                                  // </Exclude>
+    }
+    if (interest.GetAgent()>=0)
+    {
+      written += EstimateBlockHeader (CcnbParser::CCN_DTAG_Agent);
+      written += EstimateNumber(interest.GetAgent());
+      written += 1;
     }
   if (interest.IsEnabledChildSelector())
     {

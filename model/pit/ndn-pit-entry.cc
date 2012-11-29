@@ -17,6 +17,12 @@
  *
  * Author: Alexander Afanasyev <alexander.afanasyev@ucla.edu>
  */
+ /**
+  * Modified by Tang, <tangjianqiang@bjtu.edu.cn>
+  * National Engineering Lab for Next Generation Internet Interconnection Devices,
+  * School of Electronics and Information Engineering,
+  * Beijing Jiaotong Univeristy, Beijing 100044, China.
+**/
 
 #include "ndn-pit-entry.h"
 
@@ -81,6 +87,11 @@ Entry::RemoveIncoming (Ptr<Face> face)
   m_incoming.erase (face);
 }
 
+void
+Entry::SetFibEntry (const Ptr<fib::Entry> &fibEntry) 
+{
+   m_fibEntry=fibEntry;
+}
 
 Entry::out_iterator
 Entry::AddOutgoing (Ptr<Face> face)

@@ -254,37 +254,7 @@ template<class Policy>
 Ptr<Entry>
 PitImpl<Policy>::Create (Ptr<const InterestHeader> header)
 {
-/*
-  Ptr<fib::Entry> fibEntry = m_fib->LongestPrefixMatch (*header);
-  if (fibEntry == 0)
-    return 0;
   
-  // NS_ASSERT_MSG (fibEntry != 0,
-  //                "There should be at least default route set" <<
-  //                " Prefix = "<< header->GetName() << ", NodeID == " << m_fib->GetObject<Node>()->GetId() << "\n" << *m_fib);
-
-  Ptr< entry > newEntry = ns3::Create< entry > (boost::ref (*this), header, fibEntry);
-  std::pair< typename super::iterator, bool > result = super::insert (header->GetName (), newEntry);
-  if (result.first != super::end ())
-    {
-      if (result.second)
-        {
-          newEntry->SetTrie (result.first);
-          return newEntry;
-        }
-      else
-        {
-          // should we do anything?
-          // update payload? add new payload?
-          return result.first->payload ();
-        }
-    }
-  else
-    return 0;
-*/
-    
-  //added by Tang
-
   if(header->IsEnabledLocator () && header->GetLocator().size()>0)
     {
       Ptr<fib::Entry> fibEntry = m_fib->LongestPrefixMatchOfLocator (*header);
@@ -336,12 +306,6 @@ PitImpl<Policy>::Create (Ptr<const InterestHeader> header)
         return 0;
   }
 }
-
-//We can add CreateWithLocator here, added by Tang
-/**template<class Policy>
- *Ptr<Entry>
- *PitImpl<Policy>::CreateWithLocator (Ptr<const InterestHeader> header)
- **/
 
 template<class Policy>
 void

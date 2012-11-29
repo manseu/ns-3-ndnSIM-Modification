@@ -18,15 +18,37 @@
  * Author: Ilya Moiseenko <iliamo@cs.ucla.edu>
  *         Alexander Afanasyev <alexander.afanasyev@ucla.edu>
  */
+/**
+  * Modified by Tang, <tangjianqiang@bjtu.edu.cn>
+  * National Engineering Lab for Next Generation Internet Interconnection Devices,
+  * School of Electronics and Information Engineering,
+  * Beijing Jiaotong Univeristy, Beijing 100044, China.
+**/
 
-#ifndef NDN_PRODUCER_H
-#define NDN_PRODUCER_H
+/**
+ * This is a location agent for producer.
+**/
+
+#ifndef NDN_PRODUCER_AGENT_H
+#define NDN_PRODUCER_AGENT_H
 
 #include "ndn-app.h"
 
 #include "ns3/ptr.h"
 #include "ns3/ndn-name-components.h"
 #include "ns3/ndn-content-object-header.h"
+
+#include "ns3/nstime.h"
+#include "ns3/random-variable.h"
+#include "ns3/data-rate.h"
+#include "../../internet/model/rtt-estimator.h"
+
+#include <set>
+
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/tag.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/member.hpp>
 
 namespace ns3 {
 namespace ndn {
@@ -39,13 +61,13 @@ namespace ndn {
  * size and name same as in Interest.cation, which replying every incoming Interest
  * with Data packet with a specified size and name same as in Interest.
  */
-class Producer : public App
+class ProducerAgent: public App
 {
 public: 
   static TypeId
   GetTypeId (void);
         
-  Producer ();
+  ProducerAgent ();
 
   // inherited from NdnApp
   void OnInterest (const Ptr<const InterestHeader> &interest, Ptr<Packet> packet);
@@ -58,17 +80,24 @@ protected:
   virtual void
   StopApplication ();     // Called at time specified by Stop
 
+  UniformVariable m_rand; ///< @brief nonce generator
+
 private:
   NameComponents m_prefix;
   NameComponents m_locatorName;
-  int8_t m_positionPoint;
+  int8_t m_isfromAgent;
+  /*
   uint32_t m_virtualPayloadSize;
   
   uint32_t m_signatureBits;
   // ContentObjectHeader::SignedInfo m_signedInfo;
+
+  SeqTimeoutsContainer m_seqTimeouts;       ///< \brief multi-index for the set of SeqTimeout structs
+  SeqTimeoutsContainer m_seqLifetimes;
+  */
 };
 
 } // namespace ndn
 } // namespace ns3
 
-#endif // NDN_PRODUCER_H
+#endif // NDN_PRODUCER_Agent_H

@@ -255,6 +255,12 @@ public:
    */
   const NameComponents&
   GetExclude () const;
+  
+  void
+  SetAgent (int8_t agent);
+
+  int8_t
+  GetAgent () const;
 
   /**
    * \brief Set ChildSelector
@@ -417,6 +423,7 @@ private:
   int32_t m_minSuffixComponents; ///< Minimum suffix components. not used if negative
   int32_t m_maxSuffixComponents; ///< Maximum suffix components. not used if negative
   Ptr<NameComponents> m_exclude; ///< Exclude filter
+  int8_t m_agent;           ///< Default value for producer agent is false
   bool m_childSelector;          ///< Default value for ChildSelector is false
   bool m_answerOriginKind;       ///< Default value for AnswerOriginKind is false
   int8_t m_scope;                ///< -1 not set, 0 local scope, 1 this host, 2 immediate neighborhood

@@ -88,7 +88,6 @@ public:
   virtual Ptr<Entry>
   LongestPrefixMatch (const InterestHeader &interest);
 
-  //added by Tang
     virtual Ptr<Entry>
   LongestPrefixMatchOfLocator (const InterestHeader &interest);
   

@@ -65,7 +65,6 @@ public:
   virtual Ptr<fib::Entry>
   LongestPrefixMatch (const InterestHeader &interest) = 0;
 
-  //added by Tang
   virtual Ptr<fib::Entry>
   LongestPrefixMatchOfLocator (const InterestHeader &interest) = 0;
   

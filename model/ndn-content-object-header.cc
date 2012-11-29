@@ -39,6 +39,8 @@
 
 #include <boost/foreach.hpp>
 
+#include "ns3/unused.h"
+
 NS_LOG_COMPONENT_DEFINE ("ndn.ContentObjectHeader");
 
 namespace ns3 {
@@ -63,13 +65,14 @@ ContentObjectHeader::GetTypeId (void)
 }
 
 ContentObjectHeader::ContentObjectHeader ()
+	: m_position (-1)
 {
 }
 
 void
 ContentObjectHeader::SetName (const Ptr<NameComponents> &name)
 {
-  m_name = name;
+  m_name=name;
 }
 
 const NameComponents&
@@ -84,34 +87,43 @@ ContentObjectHeader::GetNamePtr () const
 {
   return m_name;
 }
-/*
+
 void
 ContentObjectHeader::SetLocator (const Ptr<NameComponents> &locator)
 {
- if (m_locator==0) throw ContentObjectHeaderException();
   m_locator = locator;
 }
-*/
-/**
- * added by Tang
- * Operate Locator Here
- * wether Locator is zero?
- **/
- /*
+
 const NameComponents&
 ContentObjectHeader::GetLocator() const
 {
-  //  if (m_locator==0) ;
+  if (m_locator==0) throw ContentObjectHeaderException();
   return *m_locator;
 }
-*/
-/*
+
 Ptr<const NameComponents>
 ContentObjectHeader::GetLocatorPtr () const
 {
   return m_locator;
 }
-*/
+
+bool
+ContentObjectHeader::IsEnabledLocator () const
+{
+  return m_locator!=0;
+}
+
+void
+ContentObjectHeader::SetPosition (int8_t position)
+{
+  m_position = position;
+}
+
+int8_t
+ContentObjectHeader::GetPosition () const
+{
+  return m_position;
+}
 
 #define CCNB EncodingHelper // just to simplify writing
 
@@ -137,15 +149,19 @@ ContentObjectHeader::Serialize (Buffer::Iterator start) const
   written += CCNB::AppendNameComponents (start, GetName()); //   <Component>...</Component>...
   written += CCNB::AppendCloser (start);                                  // </Name>  
 
-  //added by Tang
-  /*
-  if(!(GetLocator()==0))
+  if( IsEnabledLocator() && GetLocator().size()>0)
   {
     written += CCNB::AppendBlockHeader (start, CCN_DTAG_Locator, CCN_DTAG);    // <Name>
     written += CCNB::AppendNameComponents (start, GetLocator()); //   <Component>...</Component>...
     written += CCNB::AppendCloser (start);     
   }
-*/
+  
+  if (GetPosition() >= 0)
+    {
+      written += CCNB::AppendBlockHeader (start,CCN_DTAG_Position, CCN_DTAG);
+      written += CCNB::AppendNumber (start, GetPosition ());
+      written += CCNB::AppendCloser (start);
+    }
 
   // fake signature
   written += CCNB::AppendBlockHeader (start, CCN_DTAG_SignedInfo, CCN_DTAG); // <SignedInfo>
@@ -222,15 +238,21 @@ ContentObjectHeader::GetSerializedSize () const
   written += CCNB::EstimateBlockHeader (CCN_DTAG_Name);    // <Name>
   written += CCNB::EstimateNameComponents (GetName()); //   <Component>...</Component>...
   written += 1;                                  // </Name>  
-/*
-//added by Tang
-  if(!(GetLocator()==0))
+
+  if( IsEnabledLocator() && GetLocator().size()>0)
   {
     written += CCNB::EstimateBlockHeader (CCN_DTAG_Locator);    // <Name>
     written += CCNB::EstimateNameComponents (GetLocator()); //   <Component>...</Component>...
-    written += 1;                                  // </Name>  
+    written += 1;
   }
-*/
+  
+  if (GetPosition() >= 0)
+    {
+      written += CCNB::EstimateBlockHeader (CCN_DTAG_Position);
+      written += CCNB::EstimateNumber (GetPosition ());
+      written += 1;
+    }
+
   // fake signature
   written += CCNB::EstimateBlockHeader (CCN_DTAG_SignedInfo); // <SignedInfo>
   // SignedInfo ::= √PublisherPublicKeyDigest
@@ -320,7 +342,6 @@ public:
           contentObject.SetName (name);
           break;
         }
-/*
       case CCN_DTAG_Locator:
         {
           // process name components
@@ -333,7 +354,15 @@ public:
           contentObject.SetLocator (locator);
           break;
         }
-*/
+    case CCN_DTAG_Position: 
+      if (n.m_nestedTags.size()!=1) // should be exactly one UDATA inside this tag
+        throw CcnbDecodingException ();
+      contentObject.SetPosition (
+               boost::any_cast<uint32_t> (
+                                          (*n.m_nestedTags.begin())->accept(
+                                                                           nonNegativeIntegerVisitor
+                                                                           )));
+      break;
       case CCN_DTAG_Signature: 
         // process nested blocks
         BOOST_FOREACH (Ptr<Block> block, n.m_nestedTags)

@@ -18,6 +18,12 @@
  * Author: Alexander Afanasyev <alexander.afanasyev@ucla.edu>
  *         Ilya Moiseenko <iliamo@cs.ucla.edu>
  */
+/**
+  * Modified by Tang, <tangjianqiang@bjtu.edu.cn>
+  * National Engineering Lab for Next Generation Internet Interconnection Devices,
+  * School of Electronics and Information Engineering,
+  * Beijing Jiaotong Univeristy, Beijing 100044, China.
+**/
 
 #include "flooding.h"
 
@@ -73,22 +79,32 @@ Flooding::DoPropagateInterest (const Ptr<Face> &incomingFace,
       NS_LOG_DEBUG ("Trying " << boost::cref(metricFace));
       if (metricFace.m_status == fib::FaceMetric::NDN_FIB_RED) // all non-read faces are in the front of the list
         break;
-      
+	  
       if (metricFace.m_face == incomingFace) 
         {
-          NS_LOG_DEBUG ("continue (same as incoming)");
-          continue; // same face as incoming, don't forward
+	      NS_LOG_DEBUG ("continue (same as incoming)");
+            continue; // same face as incoming, don't forward
         }
 
       if (!WillSendOutInterest (metricFace.m_face, header, pitEntry))
         {
-          continue;
+            continue;
         }
 
-      //transmission
+   if(header->GetAgent()>0)
+    {  
+     int8_t agentValue=-1;
+     header->SetAgent(agentValue);
+     Ptr<Packet> new_packet = Create<Packet> ();
+     new_packet->AddHeader (*header);
+     metricFace.m_face->Send (new_packet);
+   }
+  else
+   {
+       //transmission
       Ptr<Packet> packetToSend = packet->Copy ();
       metricFace.m_face->Send (packetToSend);
-
+   }
       DidSendOutInterest (metricFace.m_face, header, packet, pitEntry);
       
       propagatedCount++;

@@ -18,6 +18,12 @@
  * Author: Ilya Moiseenko <iliamo@cs.ucla.edu>
  *         Alexander Afanasyev <alexander.afanasyev@ucla.edu>
  */
+/**
+  * Modified by Tang, <tangjianqiang@bjtu.edu.cn>
+  * National Engineering Lab for Next Generation Internet Interconnection Devices,
+  * School of Electronics and Information Engineering,
+  * Beijing Jiaotong Univeristy, Beijing 100044, China.
+**/
 
 #ifndef NDN_CONSUMER_H
 #define NDN_CONSUMER_H
@@ -128,7 +134,8 @@ protected:
   Time               m_offTime;             ///< \brief Time interval between packets
   NameComponents     m_interestName;        ///< \brief NDN Name of the Interest (use NameComponents)
   
-  NameComponents     m_locatorName;    //added by Tang
+  NameComponents     m_locatorName;    //for locator
+  int8_t     m_isfromAgent;    //for producer agent
   
   Time               m_interestLifeTime;    ///< \brief LifeTime for interest packet
   int32_t            m_minSuffixComponents; ///< \brief MinSuffixComponents. See InterestHeader for more information

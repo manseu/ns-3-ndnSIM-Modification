@@ -25,7 +25,7 @@
   * Beijing Jiaotong Univeristy, Beijing 100044, China.
 **/
 
-#include "ndn-producer.h"
+#include "ndn-producer-agent.h"
 #include "ns3/log.h"
 #include "ns3/ndn-interest-header.h"
 #include "ns3/ndn-content-object-header.h"
@@ -41,54 +41,58 @@
 #include <boost/ref.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/lambda/bind.hpp>
+//add by tang
+#include "ns3/ptr.h"
+#include "ns3/callback.h"
+#include "ns3/string.h"
+#include "ns3/boolean.h"
+#include "ns3/double.h"
+
+#include <boost/lexical_cast.hpp>
+#include "ns3/names.h"
+
+#include "ns3/unused.h"
+#include "../helper/ndn-encoding-helper.h"
+#include "../helper/ndn-decoding-helper.h"
+
 namespace ll = boost::lambda;
 
-NS_LOG_COMPONENT_DEFINE ("ndn.Producer");
+NS_LOG_COMPONENT_DEFINE ("ndn.ProducerAgent");
 
 namespace ns3 {
 namespace ndn {
 
-NS_OBJECT_ENSURE_REGISTERED (Producer);
+NS_OBJECT_ENSURE_REGISTERED (ProducerAgent);
     
 TypeId
-Producer::GetTypeId (void)
+ProducerAgent::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::ndn::Producer")
+  static TypeId tid = TypeId ("ns3::ndn::ProducerAgent")
     .SetGroupName ("Ndn")
     .SetParent<App> ()
-    .AddConstructor<Producer> ()
+    .AddConstructor<ProducerAgent> ()
     .AddAttribute ("Prefix","Prefix, for which producer has the data",
                    StringValue ("/"),
-                   MakeNameComponentsAccessor (&Producer::m_prefix),
+                   MakeNameComponentsAccessor (&ProducerAgent::m_prefix),
                    MakeNameComponentsChecker ())
     .AddAttribute ("Locator","Locator, for which locator the mobile producer has attached",
                    StringValue ("/"),
-                   MakeNameComponentsAccessor (&Producer::m_locatorName),
+                   MakeNameComponentsAccessor (&ProducerAgent::m_locatorName),
                    MakeNameComponentsChecker ())
-    .AddAttribute ("PayloadSize", "Virtual payload size for Content packets",
-                   UintegerValue (1024),
-                   MakeUintegerAccessor(&Producer::m_virtualPayloadSize),
-                   MakeUintegerChecker<uint32_t>())
-
-    // optional attributes
-    .AddAttribute ("SignatureBits", "SignatureBits field",
-                   UintegerValue (0),
-                   MakeUintegerAccessor(&Producer::m_signatureBits),
-                   MakeUintegerChecker<uint32_t> ())
     ;
         
   return tid;
 }
     
-Producer::Producer ()
-	:m_positionPoint (-1)
+ProducerAgent::ProducerAgent ()
+	:m_isfromAgent (1)
 {
   // NS_LOG_FUNCTION_NOARGS ();
 }
 
 // inherited from Application base class.
 void
-Producer::StartApplication ()
+ProducerAgent::StartApplication ()
 {
   NS_LOG_FUNCTION_NOARGS ();
   NS_ASSERT (GetNode ()->GetObject<Fib> () != 0);
@@ -110,7 +114,7 @@ Producer::StartApplication ()
 }
 
 void
-Producer::StopApplication ()
+ProducerAgent::StopApplication ()
 {
   NS_LOG_FUNCTION_NOARGS ();
   NS_ASSERT (GetNode ()->GetObject<Fib> () != 0);
@@ -118,9 +122,8 @@ Producer::StopApplication ()
   App::StopApplication ();
 }
 
-
 void
-Producer::OnInterest (const Ptr<const InterestHeader> &interest, Ptr<Packet> origPacket)
+ProducerAgent::OnInterest (const Ptr<const InterestHeader> &interest, Ptr<Packet> origPacket)
 {
   App::OnInterest (interest, origPacket); // tracing inside
 
@@ -129,54 +132,41 @@ Producer::OnInterest (const Ptr<const InterestHeader> &interest, Ptr<Packet> ori
   if (!m_active) return;
 
   //we can do something here, check the next node, or forward to the new locator.
-  //if(interest->GetLocator()==m_prefix) return;
-  //if(!(interest->GetName().cut(1) == m_prefix)) return;
-  
-  static ContentObjectTail tail;
-  Ptr<ContentObjectHeader> header = Create<ContentObjectHeader> ();
-  header->SetName (Create<NameComponents> (interest->GetName ()));
-  if (interest->IsEnabledLocator()&&(interest->GetLocator().size ()>0))
+  if(((interest->GetName().cut(1) == m_prefix))&&(m_locatorName.size()>0)) 
   {
-    if(m_locatorName.size()>0)
-    {
-	header->SetLocator (Create<NameComponents> (m_locatorName));
-    }
-  }
-  if (interest->IsEnabledLocator()&&(interest->GetLocator().size ()>0))
-  {
-      m_positionPoint=1;
-      header->SetPosition (m_positionPoint);
+      InterestHeader interestHeader;
+      interestHeader.SetNonce              (m_rand.GetValue ());
+      interestHeader.SetName               (Create<NameComponents> (interest->GetName ()));
+      interestHeader.SetLocator            (Create<NameComponents> (m_locatorName));
+ 
+      interestHeader.SetInterestLifetime    (interest->GetInterestLifetime ());
+
+      interestHeader.SetChildSelector       (interest->IsEnabledChildSelector());
+      if (interest->IsEnabledExclude()&&(interest->GetExclude().size ()>0))
+      {
+          interestHeader.SetExclude (Create<NameComponents> (interest->GetExclude ()));
+      }
+
+      interestHeader.SetAgent(m_isfromAgent);
+
+      interestHeader.SetMaxSuffixComponents (interest->GetMaxSuffixComponents());
+      interestHeader.SetMinSuffixComponents (interest->GetMinSuffixComponents ());
+ 
+
+      Ptr<Packet> packet = Create<Packet> ();
+      packet->AddHeader (interestHeader);
+      NS_LOG_DEBUG ("Interest packet size: " << packet->GetSize ());
+
+      m_protocolHandler (packet);
+
   }
   else
   {
-      m_positionPoint=-1;
-      header->SetPosition (m_positionPoint);
+      //NS_LOG_UNCOND("at producer agent: "<< interest->GetName() <<"\n");
+      return;
   }
-  header->GetSignedInfo ().SetTimestamp (Simulator::Now ());
-  header->GetSignature ().SetSignatureBits (m_signatureBits);
 
-  NS_LOG_INFO ("node("<< GetNode()->GetId() <<") respodning with ContentObject:\n" << boost::cref(*header));
   
-  Ptr<Packet> packet = Create<Packet> (m_virtualPayloadSize);
-  // Ptr<const WeightsPathStretchTag> tag = origPacket->RemovePacketTag<WeightsPathStretchTag> ();
-  // if (tag != 0)
-  //   {
-  //     // std::cout << Simulator::Now () << ", " << m_app->GetInstanceTypeId ().GetName () << "\n";
-
-  //     // echo back WeightsPathStretchTag
-  //     packet->AddPacketTag (CreateObject<WeightsPathStretchTag> (*tag));
-
-  //     // \todo
-  //     // packet->AddPacketTag should actually accept Ptr<const WeightsPathStretchTag> instead of
-  //     // Ptr<WeightsPathStretchTag>.  Echoing will be simplified after change is done
-  //   }
-  
-  packet->AddHeader (*header);
-  packet->AddTrailer (tail);
-
-  m_protocolHandler (packet);
-  
-  m_transmittedContentObjects (header, packet, this, m_face);
 }
 
 } // namespace ndn

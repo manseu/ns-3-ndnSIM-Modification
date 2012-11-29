@@ -51,7 +51,6 @@ public:
   void
   SetPrefix (const std::string &prefix);
 
-  //added by Tang
   void
   SetLocator (const std::string &prefix);
   

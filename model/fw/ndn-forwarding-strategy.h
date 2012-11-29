@@ -18,6 +18,13 @@
  * Author:  Alexander Afanasyev <alexander.afanasyev@ucla.edu>
  *          Ilya Moiseenko <iliamo@cs.ucla.edu>
  */
+/**
+  * Modified by Tang, <tangjianqiang@bjtu.edu.cn>
+  * National Engineering Lab for Next Generation Internet Interconnection Devices,
+  * School of Electronics and Information Engineering,
+  * Beijing Jiaotong Univeristy, Beijing 100044, China.
+**/
+ 
 #ifndef NDN_FORWARDING_STRATEGY_H
 #define NDN_FORWARDING_STRATEGY_H
 

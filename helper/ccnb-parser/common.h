@@ -171,8 +171,10 @@ enum ccn_dtag {
   CCN_DTAG_StatusText = 114,
   CCN_DTAG_Nack = 200,
 
-  // added by Tang
+  //Added
   CCN_DTAG_Locator =201,
+  CCN_DTAG_Agent=202,
+  CCN_DTAG_Position=203,
 
   CCN_DTAG_SequenceNumber = 256,
   CCN_DTAG_CCNProtocolDataUnit = 17702112

@@ -51,6 +51,7 @@ InterestHeader::GetTypeId (void)
 InterestHeader::InterestHeader ()
   : m_minSuffixComponents (-1)
   , m_maxSuffixComponents (-1)
+  , m_agent (-1)
   , m_childSelector (false)
   , m_answerOriginKind (false)
   , m_scope (-1)
@@ -79,7 +80,6 @@ InterestHeader::GetNamePtr () const
   return m_name;
 }
 
-//added by Tang
 void
 InterestHeader::SetLocator (const Ptr<NameComponents> &locator)
 {
@@ -146,6 +146,18 @@ InterestHeader::GetExclude () const
 {
   if (m_exclude==0) throw InterestHeaderException();
   return *m_exclude;
+}
+
+void
+InterestHeader::SetAgent (int8_t agent)
+{
+  m_agent = agent;
+}
+
+int8_t
+InterestHeader::GetAgent () const
+{
+  return m_agent;
 }
 
 void
@@ -254,7 +266,7 @@ InterestHeader::Print (std::ostream &os) const
   
   return;
   os << "<Interest>\n  <Name>" << GetName () << "</Name>\n";
-  //added by Tang
+
   if(IsEnabledLocator () && GetLocator().size()>0)
     os << "  <LocatorName>" << GetLocator() << "</LocatorName>\n";
   if (GetNack ()>0)

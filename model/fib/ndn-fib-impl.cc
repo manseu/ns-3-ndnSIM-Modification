@@ -81,7 +81,6 @@ FibImpl::LongestPrefixMatch (const InterestHeader &interest)
     return item->payload ();
 }
 
-  // Added by Tang for locator of content
 Ptr<Entry>
 FibImpl::LongestPrefixMatchOfLocator (const InterestHeader &interest)
 {

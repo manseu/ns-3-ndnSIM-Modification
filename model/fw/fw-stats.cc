@@ -149,20 +149,6 @@ FwStats::DidSendOutInterest (const Ptr<Face> &outgoingFace,
   m_stats.Outgoing (header->GetName ().cut (1), outgoingFace);
   m_stats.Tx (header->GetName ().cut (1), outgoingFace, packet->GetSize ());
 
-  //added by Tang
-  /**
-  if(header->GetLocator ()!=0)
-  {
-    m_stats.Outgoing(header->GetLocator, outgoingFace);
-    m_stats.Tx(header->GetLocator, outgoingFace, packet->GetSize ());
-  }
-  else
-  {
-    m_stats.Outgoing (header->GetName ().cut (1), outgoingFace);
-    m_stats.Tx (header->GetName ().cut (1), outgoingFace, packet->GetSize ());
-  }
-  **/
-  
   ScheduleRefreshingIfNecessary ();
 }
 
