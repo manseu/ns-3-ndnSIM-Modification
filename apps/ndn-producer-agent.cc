@@ -41,6 +41,7 @@
 #include <boost/ref.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/lambda/bind.hpp>
+#include <boost/foreach.hpp>
 //add by tang
 #include "ns3/ptr.h"
 #include "ns3/callback.h"
@@ -79,6 +80,14 @@ ProducerAgent::GetTypeId (void)
                    StringValue ("/"),
                    MakeNameComponentsAccessor (&ProducerAgent::m_locatorName),
                    MakeNameComponentsChecker ())
+    .AddAttribute ("HandoffTime","the handoff time for mobile producer",
+                   StringValue ("0"),
+                   MakeTimeAccessor  (&ProducerAgent::m_handoffTime),
+                   MakeTimeChecker ())
+    .AddAttribute ("IsOpenCache","the handoff time for mobile producer",
+                   BooleanValue(false),
+                   MakeBooleanAccessor(&ProducerAgent::m_isopenCache),
+                   MakeBooleanChecker())
     ;
         
   return tid;
@@ -86,6 +95,7 @@ ProducerAgent::GetTypeId (void)
     
 ProducerAgent::ProducerAgent ()
 	:m_isfromAgent (1)
+	,m_forwardtime (0)
 {
   // NS_LOG_FUNCTION_NOARGS ();
 }
@@ -106,6 +116,8 @@ ProducerAgent::StartApplication ()
   Ptr<fib::Entry> fibEntry = fib->Add (m_prefix, m_face, 0);
 
   fibEntry->UpdateStatus (m_face, fib::FaceMetric::NDN_FIB_GREEN);
+
+  SetForwardTime(Simulator::Now () + m_handoffTime);
   
   // // make face green, so it will be used primarily
   // StaticCast<fib::FibImpl> (fib)->modify (fibEntry,
@@ -122,6 +134,36 @@ ProducerAgent::StopApplication ()
   App::StopApplication ();
 }
 
+bool
+ProducerAgent::IsOpenCache () const
+{
+  return m_isopenCache;
+}
+
+void
+ProducerAgent::SetForwardTime(Time forwardTimer)
+{
+   m_forwardtime=forwardTimer;
+}
+
+Time
+ProducerAgent::GetForwardTime () const
+{
+  return m_forwardtime;
+}
+
+void
+ProducerAgent::SetCacheInterest (bool value)
+{
+  m_iscached=value;
+}
+
+bool
+ProducerAgent::IsCachedInterest () const
+{
+  return m_iscached;
+}
+
 void
 ProducerAgent::OnInterest (const Ptr<const InterestHeader> &interest, Ptr<Packet> origPacket)
 {
@@ -131,42 +173,61 @@ ProducerAgent::OnInterest (const Ptr<const InterestHeader> &interest, Ptr<Packet
 
   if (!m_active) return;
 
-  //we can do something here, check the next node, or forward to the new locator.
-  if(((interest->GetName().cut(1) == m_prefix))&&(m_locatorName.size()>0)) 
+  if((interest->GetName().cut(1) == m_prefix))
   {
-      InterestHeader interestHeader;
-      interestHeader.SetNonce              (m_rand.GetValue ());
-      interestHeader.SetName               (Create<NameComponents> (interest->GetName ()));
-      interestHeader.SetLocator            (Create<NameComponents> (m_locatorName));
+    Time timeNow=Simulator::Now ();	  
+    if ((m_locatorName.size()>0) && (timeNow >= GetForwardTime()))
+    {
+      InterestHeader cachedHeader;
+      cachedHeader.SetNonce              (m_rand.GetValue ());
+      cachedHeader.SetLocator            (Create<NameComponents> (m_locatorName));
  
-      interestHeader.SetInterestLifetime    (interest->GetInterestLifetime ());
-
-      interestHeader.SetChildSelector       (interest->IsEnabledChildSelector());
+      cachedHeader.SetInterestLifetime    (interest->GetInterestLifetime ());
+      cachedHeader.SetChildSelector       (interest->IsEnabledChildSelector());
       if (interest->IsEnabledExclude()&&(interest->GetExclude().size ()>0))
       {
-          interestHeader.SetExclude (Create<NameComponents> (interest->GetExclude ()));
+        cachedHeader.SetExclude (Create<NameComponents> (interest->GetExclude ()));
       }
+      cachedHeader.SetAgent(m_isfromAgent);
+      cachedHeader.SetMaxSuffixComponents (interest->GetMaxSuffixComponents());
+      cachedHeader.SetMinSuffixComponents (interest->GetMinSuffixComponents ());
+		  
+	if(IsCachedInterest())
+	{
+          BOOST_FOREACH(const uint32_t t_seq, intr_container)
+          {
+            Ptr<NameComponents> nameWithSequence = Create<NameComponents> (m_prefix);
+            (*nameWithSequence) (t_seq);
+            cachedHeader.SetName(nameWithSequence);
+            Ptr<Packet> packet = Create<Packet> ();
+            packet->AddHeader (cachedHeader);
+            NS_LOG_DEBUG ("Interest packet size: " << packet->GetSize ());
 
-      interestHeader.SetAgent(m_isfromAgent);
+            m_protocolHandler (packet);
+          }
+          intr_container.clear();
+          SetCacheInterest(false);
+	}
 
-      interestHeader.SetMaxSuffixComponents (interest->GetMaxSuffixComponents());
-      interestHeader.SetMinSuffixComponents (interest->GetMinSuffixComponents ());
- 
-
+      cachedHeader.SetName (Create<NameComponents> (interest->GetName ()));
       Ptr<Packet> packet = Create<Packet> ();
-      packet->AddHeader (interestHeader);
+      packet->AddHeader (cachedHeader);
       NS_LOG_DEBUG ("Interest packet size: " << packet->GetSize ());
-
       m_protocolHandler (packet);
 
-  }
-  else
-  {
-      //NS_LOG_UNCOND("at producer agent: "<< interest->GetName() <<"\n");
-      return;
+    }
+    else
+    {
+      if(IsOpenCache())
+      	{
+        uint32_t seq = boost::lexical_cast<uint32_t> (interest->GetName ().GetComponents ().back ());
+        intr_container.insert(seq);
+        SetCacheInterest(true);
+      	}
+	return;      
+    }
   }
 
-  
 }
 
 } // namespace ndn

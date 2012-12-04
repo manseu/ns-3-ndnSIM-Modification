@@ -64,6 +64,8 @@ namespace ndn {
 class ProducerAgent: public App
 {
 public: 
+  typedef std::set< int32_t > seq_container;
+  typedef seq_container::const_iterator interest_iterator;
   static TypeId
   GetTypeId (void);
         
@@ -71,6 +73,21 @@ public:
 
   // inherited from NdnApp
   void OnInterest (const Ptr<const InterestHeader> &interest, Ptr<Packet> packet);
+  
+  bool
+  IsOpenCache () const;
+  
+  void
+  SetForwardTime(Time forwardTimer);
+
+  Time
+  GetForwardTime () const;
+  
+  void
+  SetCacheInterest (bool value);
+
+  bool
+  IsCachedInterest () const;
 
 protected:
   // inherited from Application base class.
@@ -82,10 +99,16 @@ protected:
 
   UniformVariable m_rand; ///< @brief nonce generator
 
+  seq_container intr_container;
+
 private:
   NameComponents m_prefix;
   NameComponents m_locatorName;
   int8_t m_isfromAgent;
+  bool m_isopenCache;
+  bool m_iscached;
+  Time m_handoffTime;
+  Time m_forwardtime;
   /*
   uint32_t m_virtualPayloadSize;
   
