@@ -426,7 +426,7 @@ ForwardingStrategy::PropagateInterest (const Ptr<Face> &incomingFace,
   bool isRetransmitted = m_detectRetransmissions && // a small guard
                          DetectRetransmittedInterest (incomingFace, pitEntry);  
  
-  if(!(header->GetAgent()>0))
+  if(!(header->GetAgent()==1))
   {
       pitEntry->AddIncoming (incomingFace/*, header->GetInterestLifetime ()*/);
   }

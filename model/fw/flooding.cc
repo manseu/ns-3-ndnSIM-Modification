@@ -91,9 +91,9 @@ Flooding::DoPropagateInterest (const Ptr<Face> &incomingFace,
             continue;
         }
 
-   if(header->GetAgent()>0)
+   if(header->GetAgent()==1)
     {  
-     int8_t agentValue=-1;
+     int8_t agentValue=2;
      header->SetAgent(agentValue);
      Ptr<Packet> new_packet = Create<Packet> ();
      new_packet->AddHeader (*header);
